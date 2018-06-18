@@ -8,21 +8,32 @@ function randomize(x) {
 
 class NeuralNetwork {
   constructor(input_node_count, hidden_node_count, output_node_count) {
-    this.input_node_count = input_node_count;
-    this.hidden_nodes_count = hidden_node_count;
-    this.output_node_count = output_node_count;
+    if (input_node_count instanceof NeuralNetwork) {
+      const otherNN = input_node_count;
+      this.input_node_count = otherNN.input_node_count;
+      this.hidden_nodes_count = otherNN.hidden_node_count;
+      this.output_node_count = otherNN.output_node_count;
 
-    this.weights_ih = math.zeros(this.hidden_nodes_count, this.input_node_count).map(randomize);
-    this.weights_ho = math.zeros(this.output_node_count, this.hidden_nodes_count).map(randomize);
+      this.weights_ih = otherNN.weights_ih.clone();
+      this.weights_ho = otherNN.weights_ho.clone();
 
-    this.weights_bias_h = math.zeros(this.hidden_nodes_count, 1).map(randomize);
-    this.weights_bias_o = math.zeros(this.output_node_count, 1).map(randomize);
+      this.weights_bias_h = otherNN.weights_bias_h.clone();
+      this.weights_bias_o = otherNN.weights_bias_o.clone();
+    } else {
+      this.input_node_count = input_node_count;
+      this.hidden_nodes_count = hidden_node_count;
+      this.output_node_count = output_node_count;
 
+      this.weights_ih = math.zeros(this.hidden_nodes_count, this.input_node_count).map(randomize);
+      this.weights_ho = math.zeros(this.output_node_count, this.hidden_nodes_count).map(randomize);
+
+      this.weights_bias_h = math.zeros(this.hidden_nodes_count, 1).map(randomize);
+      this.weights_bias_o = math.zeros(this.output_node_count, 1).map(randomize);
+    }
     this.learning_rate = 0.1;
   }
 
   predict(input_nodes) {
-    
     const hidden_nodes = math.add(math.multiply(this.weights_ih, input_nodes), this.weights_bias_h)
       .map(sigmoid);
 
@@ -75,5 +86,27 @@ class NeuralNetwork {
     // adjust the bias by deltas (which is just gradients)
     this.weights_bias_h = math.add(this.weights_bias_h, gradient_h);
     return output_errors;
+  }
+
+  // fn for neuro evolution
+  copy() {
+    return new NeuralNetwork(this);
+  }
+
+  mutate(mutationRate) {
+    const alter = (val) => {
+      if (Math.random() < mutationRate) {
+        return val + randomGaussian(0, 0.1);
+      } else {
+        return val;
+      }
+    };
+    this.weights_ih = this.weights_ih.map(alter);
+    this.weights_ho = this.weights_ho.map(alter);
+
+    this.weights_bias_h = this.weights_bias_h.map(alter);
+    this.weights_bias_o = this.weights_bias_o.map(alter);
+
+    return this;
   }
 }

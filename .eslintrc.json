@@ -12,6 +12,7 @@
     "no-param-reassign": 0,
     "quotes": 0,
     "camelcase":"off",
-    "no-underscore-dangle":"off"
+    "no-underscore-dangle":"off",
+    "class-methods-use-this":"off"
   }
 }

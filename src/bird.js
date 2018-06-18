@@ -1,22 +1,30 @@
 // import { ellipse, fill, height } from 'p5';
 
 class Bird {
-  constructor() {
+  constructor(brain) {
     this.y = height / 2;
     this.x = 25;
     this.size = 16;
 
     this.gravity = 0.6;
     this.velocity = 0;
-    this.lift = -16;
+    this.lift = -12;
+    if (brain) {
+      this.brain = brain.copy();
+    } 
+    else {
+      this.brain = new NeuralNetwork(5, 8, 2);
+    }
 
-    this.brain = new NeuralNetwork(4, 4, 1);
+    this.score = 0;
+    this.fitness = 0;
 
     this.arrayToMatrix = array => math.matrix(array.map(x => [x]));
   }
 
   show() {
-    fill(255);
+    stroke(255);
+    fill(255, 10);
     ellipse(this.x, this.y, this.size, this.size);
   }
 
@@ -25,25 +33,26 @@ class Bird {
   }
 
   think(pipes) {
-    const birdx = 5;
-    const closestPipe = pipes.filter(pipe => pipe.x - birdx > 0)
+    const birdx = this.x;
+    const closestPipe = pipes.filter(pipe => pipe.x + pipe.w- birdx > 0 )
       .reduce((acc, current) => {
-        const cx = current.x;
-        const ax = acc.x;
+        const cx = current.x - birdx;
+        const ax = acc.x - birdx;
 
-        if (cx - birdx < ax - birdx) {
+        if (cx < ax) {
           return current;
         }
         return acc;
       });
 
     const input = [];
-    input.push(this.y);
+    input.push(this.y / height);
+    input.push(this.velocity/10);
     input.push(closestPipe.top / height);
     input.push(closestPipe.bottom / height);
     input.push(closestPipe.x / width);
-    const output = this.brain.predict(this.arrayToMatrix(input));
-    if (output._data[0] > 0.5) {
+    const output = this.brain.predict(this.arrayToMatrix(input))._data;
+    if (output[0] > output[1]) {
       this.up();
     }
   }
@@ -52,7 +61,7 @@ class Bird {
     this.velocity += this.gravity;
     this.y += this.velocity;
     this.velocity *= 0.9;
-
+    this.score++;
     if (this.y > height) {
       this.y = height;
       this.velocity = 0;

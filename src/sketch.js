@@ -1,13 +1,21 @@
 // import { Bird } from './bird';
 // import { Pipe } from './pipe';
 // import { Perceptron } from './nn';
+// import { GA } from './ga';
 
-let bird;
+const TOTAL = 100;
+const PIPE_SPACING = 175;
+
+let birds = [];
+let savedBirds = [];
 let pipes = [];
-let perceptron;
+let counter = 0;
 const points = [];
 let trainPointIndex = 0;
-const nn = new NeuralNetwork(2, 16, 1);
+const ga = new GA();
+let generation_count = 0;
+let slider;
+// const nn = new NeuralNetwork(2, 16, 1);
 
 // const training_data = [
 //   { inputs: math.matrix([[0], [1]]), targets: math.matrix([[1]]) },
@@ -20,22 +28,10 @@ const arrayToMatrix = array => math.matrix(array.map(x => [x]));
 
 function setup() {
   createCanvas(600, 600);
-  bird = new Bird();
-  pipes.push(new Pipe());
-
-  // const nn = new NeuralNetwork(2, 2, 1);
-  // // const input = math.matrix([[1], [0]]);
-  // // const target = math.matrix([[1], [0]]);
-
-  // // const output = nn.feedForward(input);
-  // for (let i = 0; i<50000; i++) {
-  //   const data = random(training_data);
-  //   nn.train(data.inputs, data.targets);
-  // }
-  // // console.table(nn.train(input, target)._data);
-  // for (data of training_data) {
-  //   console.table(nn.predict(data.inputs)._data);
-  // }
+  for (let i = 0; i<TOTAL; i++) {
+    birds.push(new Bird());
+  }
+  slider = createSlider(1, 100, 1);
 }
 
 function drawLine(min, max, ptron) {
@@ -46,48 +42,56 @@ function drawLine(min, max, ptron) {
 }
 
 function draw() {
-  background(21);
-  bird.show();
-  bird.update();
-  bird.think(pipes);
+  for (let n = 0; n < slider.value(); n++) {
+    if (counter % 100 == 0 ) {
+      pipes.push(new Pipe());
+      counter = 1;
+    }
+    counter++;
 
-  pipes.forEach((pipe) => {
-    pipe.show();
-    pipe.update();
-    pipe.hits(bird);
-  });
+    birds.forEach((bird) => {
+      bird.update();
+      if (pipes.length  > 0){
+        bird.think(pipes);
+      }
+    });
 
-  pipes = pipes.filter(pipe => !pipe.isOffScreen());
-  if (frameCount % 100 == 0) {
-    pipes.push(new Pipe());
+    savedBirds = savedBirds.concat(birds.filter(bird => (bird.y === height || bird.y === 0)));
+    birds = birds.filter(bird => !(bird.y === height || bird.y === 0));
+
+    if (birds.length === 0) {
+      generation_count ++;
+      console.log('generation: ' + generation_count);
+      birds = ga.nextGeneration(savedBirds, TOTAL);
+      savedBirds = [];
+      pipes = [];
+    }
+
+    pipes.forEach((pipe) => {
+      pipe.update();
+      savedBirds = savedBirds.concat(birds.filter(bird => pipe.hits(bird)));
+      birds = birds.filter(bird => !pipe.hits(bird));
+    });
+
+   
+    pipes = pipes.filter(pipe => !pipe.isOffScreen());
+
   }
 
 
-  // background(0);
-  // for (let i = 0; i<1000; i++) {
-  //   const data = random(training_data);
-  //   nn.train(data.inputs, data.targets);
-  // }
-  // const res = 10;
-  // const cols = width/ res;
-  // const rows = height / res;
-
-  // for (let i = 0; i< cols; i++) {
-  //   for (let j = 0; j< rows; j++) {
-  //     const x1 = i/cols;
-  //     const x2 = j/rows;
-  //     const inputs = math.matrix([[x1], [x2]]);
-  //     const y = nn.predict(inputs)._data[0][0];
-  //     fill(y*255);
-  //     noStroke();
-  //     rect(i*res, j* res, res, res);
-  //   }
-  // }
+  // all the drawing stuff
+  background(21);
+  birds.forEach((bird) => {
+    bird.show();
+  });
+  pipes.forEach((pipe) => {
+    pipe.show();
+  });
 }
 
 function keyPressed() {
   if (key == ' ') {
-    bird.up();
+    // bird.up();
     const point = points[trainPointIndex];
     const inputList = [point.x, point.y, point.bias];
     const target = point.label;
