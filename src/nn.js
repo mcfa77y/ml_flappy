@@ -1,5 +1,3 @@
-// import { math } from 'mathjs';
-
 function sigmoid(x) {
   return 1 / (1 + Math.exp(-x));
 }
@@ -16,74 +14,66 @@ class NeuralNetwork {
 
     this.weights_ih = math.zeros(this.hidden_nodes_count, this.input_node_count).map(randomize);
     this.weights_ho = math.zeros(this.output_node_count, this.hidden_nodes_count).map(randomize);
-    
-    this.bias_h = math.zeros(this.hidden_nodes_count, 1).map(randomize);
-    this.bias_o = math.zeros(this.output_node_count, 1).map(randomize);
+
+    this.weights_bias_h = math.zeros(this.hidden_nodes_count, 1).map(randomize);
+    this.weights_bias_o = math.zeros(this.output_node_count, 1).map(randomize);
 
     this.learning_rate = 0.1;
   }
 
-  feedForward(inputs) {
-    const hidden = math.add(math.multiply(this.weights_ih, inputs), this.bias_h)
+  predict(input_nodes) {
+    
+    const hidden_nodes = math.add(math.multiply(this.weights_ih, input_nodes), this.weights_bias_h)
       .map(sigmoid);
 
-    const output = math.add(math.multiply(this.weights_ho, hidden), this.bias_o)
+    const output_nodes = math.add(math.multiply(this.weights_ho, hidden_nodes), this.weights_bias_o)
       .map(sigmoid);
 
-    return output;
+    return output_nodes;
   }
 
-  foo(p, q, r){
-    const x0 = math.multiply(p, q);
-    const x1 = math.add(x0, r);
-    const x2 = x1.map(sigmoid);
-    return x2;
-  }
-  train(inputs, targets) {
-    const hidden = this.foo(this.weights_ih, inputs, this.bias_h)
-    // math.add(math.multiply(this.weights_ih, inputs), this.bias_h)
-    //   .map(sigmoid);
-
-    const outputs = math.add(math.multiply(this.weights_ho, hidden), this.bias_o)
+  train(input_nodes, target_nodes) {
+    const hidden_nodes = math.add(math.multiply(this.weights_ih, input_nodes), this.weights_bias_h)
       .map(sigmoid);
 
-    //let outputs = this.feedForward(inputs);
+    const output_nodes = math.add(math.multiply(this.weights_ho, hidden_nodes), this.weights_bias_o)
+      .map(sigmoid);
+
+    // let outputs = this.feedForward(input_nodes);
     // calculate the error
     // error = targets - outputs
-    console.table(outputs._data);
-    console.table(targets._data);
+    // console.table(output_nodes._data);
+    // console.table(target_nodes._data);
     // let error = math.subtract(outputs, targets);
-    let output_errors = math.subtract(targets, outputs);
+    const output_errors = math.subtract(target_nodes, output_nodes);
 
-    // calculate gradient
-    const faux_sigmoid = (x) => x * (1 - x);
-    let gradients = math.multiply(this.learning_rate, math.dotMultiply(output_errors, outputs.map(faux_sigmoid)));
+    const faux_sigmoid = x => x * (1 - x);
+    const p = math.dotMultiply(output_errors, output_nodes.map(faux_sigmoid));
+    const gradient_o = math.multiply(p, this.learning_rate);
 
-        // adjust bias
-    this.bias_o = math.add(this.bias_o, gradients);
+
+    const hidden_nodes_t = math.transpose(hidden_nodes);
+    const weight_ho_deltas = math.multiply(gradient_o, hidden_nodes_t);
+    // adjust weights by deltas
+    this.weights_ho = math.add(this.weights_ho, weight_ho_deltas);
+    // adjust the bias by deltas (which is just gradient_o)
+    this.weights_bias_o = math.add(this.weights_bias_o, gradient_o);
 
     // calculate hidden layer errors
-    let hidden_errors = math.multiply(math.transpose(this.weights_ho), output_errors);
+    const hidden_errors = math.multiply(math.transpose(this.weights_ho), output_errors);
 
-    // calculate deltas
-    let hidden_t = math.transpose(hidden);
-    let weight_ho_deltas = math.multiply(gradients, hidden_t);
-    
-    this.weights_ho = math.add(this.weights_ho, weight_ho_deltas);
+    // clculate hidden gradient
+    const q = math.dotMultiply(hidden_nodes.map(faux_sigmoid), hidden_errors);
+    const gradient_h = math.multiply(q, this.learning_rate);
 
+    // calculate input->hidden deltas
+    const input_nodes_t = math.transpose(input_nodes);
+    const weight_ih_deltas = math.multiply(gradient_h, input_nodes_t);
 
-    // calculate hidden gradient
-    let hidden_gradient = math.multiply(this.learning_rate, math.dotMultiply(hidden_errors, hidden.map(faux_sigmoid)));
-
-    // adjust hidden bias
-    this.bias_h = math.add(this.bias_h, hidden_gradients);
-
-    // calculate input -> hidden deltas;
-    let inputs_t = math.transpose(inputs);
-    let weight_ih_deltas = math.multiply(hidden_gradient, inputs_t);
-
+    // adjust weights by deltas
     this.weights_ih = math.add(this.weights_ih, weight_ih_deltas);
-
+    // adjust the bias by deltas (which is just gradients)
+    this.weights_bias_h = math.add(this.weights_bias_h, gradient_h);
     return output_errors;
   }
 }
