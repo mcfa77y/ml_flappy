@@ -1,8 +1,8 @@
 // import { random, width, rect, fill, height } from 'p5';
 
 class Pipe {
-  constructor() {
-    this.spacing = 75;
+  constructor(spacing) {
+    this.spacing = spacing;
     this.top = random(height/6, 0.75 * height);
     this.bottom = height - (this.top + this.spacing);
     this.x = width;

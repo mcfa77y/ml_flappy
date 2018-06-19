@@ -11,7 +11,7 @@ class NeuralNetwork {
     if (input_node_count instanceof NeuralNetwork) {
       const otherNN = input_node_count;
       this.input_node_count = otherNN.input_node_count;
-      this.hidden_nodes_count = otherNN.hidden_node_count;
+      this.hidden_node_count = otherNN.hidden_node_count;
       this.output_node_count = otherNN.output_node_count;
 
       this.weights_ih = otherNN.weights_ih.clone();
@@ -21,13 +21,13 @@ class NeuralNetwork {
       this.weights_bias_o = otherNN.weights_bias_o.clone();
     } else {
       this.input_node_count = input_node_count;
-      this.hidden_nodes_count = hidden_node_count;
+      this.hidden_node_count = hidden_node_count;
       this.output_node_count = output_node_count;
 
-      this.weights_ih = math.zeros(this.hidden_nodes_count, this.input_node_count).map(randomize);
-      this.weights_ho = math.zeros(this.output_node_count, this.hidden_nodes_count).map(randomize);
+      this.weights_ih = math.zeros(this.hidden_node_count, this.input_node_count).map(randomize);
+      this.weights_ho = math.zeros(this.output_node_count, this.hidden_node_count).map(randomize);
 
-      this.weights_bias_h = math.zeros(this.hidden_nodes_count, 1).map(randomize);
+      this.weights_bias_h = math.zeros(this.hidden_node_count, 1).map(randomize);
       this.weights_bias_o = math.zeros(this.output_node_count, 1).map(randomize);
     }
     this.learning_rate = 0.1;
@@ -109,4 +109,21 @@ class NeuralNetwork {
 
     return this;
   }
+
+  serialize() {
+    return JSON.stringify(this, null, 2);
+  }
+
+  static deserialize(data) {
+    if (typeof data == 'string') {
+      data = JSON.parse(data);
+    }
+    let nn = new NeuralNetwork(data.input_node_count, data.hidden_node_count, data.output_node_count);
+    nn.weights_ih = math.matrix(data.weights_ih.data);
+    nn.weights_ho = math.matrix(data.weights_ho.data);
+    nn.weights_bias_h = math.matrix(data.weights_bias_h.data);
+    nn.weights_bias_o = math.matrix(data.weights_bias_o.data);
+    nn.learning_rate = data.learning_rate;
+    return nn;
+}
 }

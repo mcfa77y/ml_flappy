@@ -7,6 +7,13 @@ class GA {
     }, 0);
     // normalize bird scores (linear)
     birds.forEach(bird => bird.fitness = bird.score / sum);
+    const fittest = birds.reduce((acc, bird) => {
+      if (bird.fitness > acc.fitness){
+        return bird
+      }
+      return acc
+    }, birds[0]);
+    console.log('fittest score: '+ fittest.fitness)
   }
 
   pickOne(birds) {
